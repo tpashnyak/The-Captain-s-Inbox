@@ -1,0 +1,873 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="The Captain's Inbox: a Destination Learning simulation on acknowledging professional messages for AP Business with Personal Finance.">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>The Captain's Inbox</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+/* Layout: navy harbor hero, then a tabbed "voyage" of five stations; one working panel per round. Midnight Executive system: navy + gold. */
+:root{
+  --bg:#F3F6FA; --surface:#FFFFFF; --surface-2:#E9EEF5; --ink:#13213A; --muted:#47556E; --line:#CCD5E2;
+  --navy:#14213D; --navy-2:#1F3157; --gold:#8A5E0B; --gold-fill:#D9AB34; --gold-ink:#14213D;
+  --sea:#1C6583; --good:#1C7445; --warn:#9A5200; --bad:#B3261E;
+  --hero-bg:#0F1A31; --hero-ink:#F3EBD6; --hero-muted:#B9C3D6; --hero-gold:#E3B649;
+  --display:"Playfair Display", Georgia, "Times New Roman", serif;
+  --body:"IBM Plex Sans", "Segoe UI", Roboto, Arial, sans-serif;
+  --mono:"IBM Plex Mono", ui-monospace, Consolas, "Courier New", monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0A1224; --surface:#121E37; --surface-2:#192845; --ink:#EDF1F7; --muted:#A9B5C9; --line:#2B3B5C;
+  --navy:#22355A; --navy-2:#2B416B; --gold:#E6BA52; --gold-fill:#E6BA52; --gold-ink:#0F1A31;
+  --sea:#5DB7D3; --good:#5BCB8D; --warn:#F2AE5B; --bad:#F2837B;
+  --hero-bg:#070D1B; --hero-ink:#F3EBD6; --hero-muted:#B9C3D6; --hero-gold:#E3B649; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0A1224; --surface:#121E37; --surface-2:#192845; --ink:#EDF1F7; --muted:#A9B5C9; --line:#2B3B5C;
+  --navy:#22355A; --navy-2:#2B416B; --gold:#E6BA52; --gold-fill:#E6BA52; --gold-ink:#0F1A31;
+  --sea:#5DB7D3; --good:#5BCB8D; --warn:#F2AE5B; --bad:#F2837B;
+  --hero-bg:#070D1B; --hero-ink:#F3EBD6; --hero-muted:#B9C3D6; --hero-gold:#E3B649; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.55}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
+.wrap{max-width:1080px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;line-height:1.15;margin:0}
+h2{font-size:clamp(1.5rem,3vw,2rem)}
+h3{font-size:1.2rem}
+p{margin:0}
+.mono{font-family:var(--mono)}
+.label{font-family:var(--mono);font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+a{color:var(--sea)}
+:focus-visible{outline:3px solid var(--gold-fill);outline-offset:2px;border-radius:4px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* Hero */
+.hero{background:var(--hero-bg);color:var(--hero-ink);overflow:hidden}
+.hero .wrap{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:24px;align-items:center;padding-block:32px 0}
+.hero .eyebrow{font-family:var(--mono);font-size:.75rem;letter-spacing:.16em;text-transform:uppercase;color:var(--hero-gold)}
+.hero h1{font-size:clamp(2.3rem,6vw,4rem);font-weight:800;margin:.25em 0 .2em}
+.hero h1 em{font-style:italic;color:var(--hero-gold)}
+.hero p.lede{color:var(--hero-muted);max-width:46ch;font-size:1.05rem}
+.hero .tags{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px;padding-bottom:28px}
+.hero .tag{font-family:var(--mono);font-size:.72rem;border:1px solid #3A4C72;color:var(--hero-ink);padding:4px 10px;border-radius:999px}
+.hero svg{width:100%;height:auto;display:block;max-width:100%}
+.wave{animation:drift 7s ease-in-out infinite alternate}
+.wave2{animation:drift 9s ease-in-out infinite alternate-reverse}
+.bob{animation:bob 4s ease-in-out infinite;transform-origin:50% 50%}
+.bottle{animation:float 6s ease-in-out infinite}
+@keyframes drift{from{transform:translateX(-18px)}to{transform:translateX(18px)}}
+@keyframes bob{0%,100%{transform:translateY(0) rotate(-.6deg)}50%{transform:translateY(-4px) rotate(.6deg)}}
+@keyframes float{0%,100%{transform:translate(0,0) rotate(-12deg)}50%{transform:translate(6px,-6px) rotate(8deg)}}
+
+/* Tabs */
+.tabbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--surface);border-bottom:1px solid var(--line)}
+.tabs{display:flex;gap:4px;overflow-x:auto;padding-block:8px;scrollbar-width:thin}
+.tab{flex:0 0 auto;display:flex;align-items:center;gap:8px;background:transparent;border:1px solid transparent;color:var(--muted);font:600 .9rem var(--body);padding:8px 12px;border-radius:8px;cursor:pointer}
+.tab:hover{background:var(--surface-2);color:var(--ink)}
+.tab[aria-selected="true"]{background:var(--navy);color:#F3EBD6;border-color:var(--navy)}
+.tab .n{font-family:var(--mono);font-size:.7rem;opacity:.85}
+.tab svg{width:18px;height:14px;flex:0 0 auto;border:1px solid rgba(0,0,0,.25)}
+
+main{padding-block:28px 64px}
+.panel{display:grid;gap:22px}
+.panel-head{display:grid;gap:8px;max-width:70ch}
+.panel-head .label{display:flex;gap:10px;align-items:center}
+.panel-head p{color:var(--muted)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:20px}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.btn{display:inline-flex;align-items:center;gap:8px;font:600 .92rem var(--body);padding:10px 16px;border-radius:8px;border:1px solid var(--navy);background:var(--navy);color:#F3EBD6;cursor:pointer}
+.btn:hover{background:var(--navy-2)}
+.btn.ghost{background:transparent;color:var(--ink);border-color:var(--line)}
+.btn.ghost:hover{background:var(--surface-2)}
+.btn.gold{background:var(--gold-fill);border-color:var(--gold-fill);color:var(--gold-ink)}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.chip{font-family:var(--mono);font-size:.72rem;padding:3px 9px;border-radius:999px;border:1px solid var(--line);color:var(--muted);background:var(--surface-2)}
+.chip.ced{border-color:var(--gold);color:var(--gold);background:transparent}
+.note{font-size:.9rem;color:var(--muted)}
+
+/* Overview */
+.route{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
+.stop{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;display:grid;gap:8px;align-content:start;cursor:pointer;text-align:left;font:inherit;color:inherit}
+.stop:hover{border-color:var(--gold)}
+.stop .t{font-family:var(--mono);font-size:.75rem;color:var(--gold)}
+.stop .h{font-family:var(--display);font-weight:700;font-size:1.05rem;line-height:1.2}
+.stop .note{font-size:.88rem}
+details.guide{background:var(--surface);border:1px solid var(--line);border-radius:var(--r)}
+details.guide>summary{cursor:pointer;padding:16px 20px;font-weight:600;list-style:none;display:flex;justify-content:space-between;gap:12px}
+details.guide>summary::after{content:"+";font-family:var(--mono);color:var(--gold)}
+details.guide[open]>summary::after{content:"−"}
+.guide-body{padding:0 20px 20px;display:grid;gap:18px}
+.guide-body ul{margin:6px 0 0;padding-left:20px}
+.guide-body li{margin:3px 0}
+table.ced{width:100%;border-collapse:collapse;font-size:.9rem}
+table.ced th,table.ced td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+table.ced th{font-family:var(--mono);font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:500}
+.tablewrap{overflow-x:auto}
+.warmup{border-left:4px solid var(--gold-fill);padding:12px 16px;background:var(--surface-2);border-radius:0 8px 8px 0}
+
+/* Round 1 */
+.scen-pick{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.scen{font:inherit;text-align:left;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;cursor:pointer;display:grid;gap:4px}
+.scen .k{font-family:var(--mono);font-size:.72rem;color:var(--muted)}
+.scen strong{font-size:.95rem;line-height:1.3}
+.scen[aria-pressed="true"]{border-color:var(--gold-fill);box-shadow:inset 0 0 0 1px var(--gold-fill)}
+.sim{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:20px}
+.sea-svg{width:100%;height:auto;border-radius:8px;background:var(--surface-2);display:block}
+.boat-g{transition:transform .7s cubic-bezier(.3,.7,.3,1)}
+.slider{width:100%;accent-color:var(--gold-fill)}
+.steps-labels{display:flex;justify-content:space-between;font-family:var(--mono);font-size:.7rem;color:var(--muted)}
+.event{min-height:6.5em;font-size:1rem}
+.meter{height:14px;background:var(--surface-2);border:1px solid var(--line);border-radius:999px;overflow:hidden}
+.meter>span{display:block;height:100%;background:var(--good);transition:width .6s,background .6s}
+.stat{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.stat b{font-family:var(--mono);font-size:1.4rem;font-variant-numeric:tabular-nums}
+.consq{display:flex;gap:6px;flex-wrap:wrap}
+.consq .chip.on{background:var(--navy);color:#F3EBD6;border-color:var(--navy)}
+.fixbox{border:1px dashed var(--good);border-radius:8px;padding:12px 14px;font-size:.95rem}
+.bigq{font-family:var(--display);font-size:1.25rem;font-style:italic}
+
+/* Round 2 */
+.lb{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:20px}
+.incoming{background:var(--surface-2);border-radius:8px;padding:12px 14px;font-size:.93rem}
+.incoming .from{font-family:var(--mono);font-size:.75rem;color:var(--muted)}
+textarea,select,input[type=text]{width:100%;font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+textarea{min-height:150px;resize:vertical}
+.timer{display:flex;align-items:center;gap:14px}
+.timer svg{width:64px;height:64px;flex:0 0 auto}
+.timer b{font-family:var(--mono);font-size:1.6rem;font-variant-numeric:tabular-nums}
+.checks{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.checks li{display:grid;grid-template-columns:28px minmax(0,1fr);gap:8px;align-items:start;font-size:.93rem}
+.checks .ico{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-family:var(--mono);font-size:.8rem;font-weight:600;border:2px solid var(--line);color:var(--muted)}
+.checks li.ok .ico{border-color:var(--good);color:var(--good)}
+.checks li.no .ico{border-color:var(--bad);color:var(--bad)}
+.boats{display:flex;gap:6px}
+.boats svg{width:34px;height:34px}
+
+/* Round 3 */
+.inbox{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:20px}
+.mail-list{list-style:none;margin:0;padding:0;border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:var(--surface)}
+.mail-list li+li{border-top:1px solid var(--line)}
+.mail{width:100%;text-align:left;font:inherit;color:var(--ink);background:transparent;border:0;padding:10px 14px;cursor:pointer;display:grid;grid-template-columns:10px minmax(0,1fr) auto;gap:10px;align-items:center}
+.mail:hover{background:var(--surface-2)}
+.mail[aria-current="true"]{background:var(--surface-2);box-shadow:inset 3px 0 0 var(--gold-fill)}
+.mail .dot{width:9px;height:9px;border-radius:50%;background:var(--sea)}
+.mail.done .dot{background:transparent;border:1.5px solid var(--line)}
+.mail .s{font-weight:600;font-size:.92rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mail .f{font-size:.8rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mail .res{font-family:var(--mono);font-size:.72rem}
+.mail .res.r{color:var(--good)} .mail .res.w{color:var(--bad)}
+.reader{display:grid;gap:14px;align-content:start}
+.reader .meta{font-family:var(--mono);font-size:.78rem;color:var(--muted)}
+.buckets{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.bucket{font:inherit;text-align:left;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:10px 12px;cursor:pointer;display:grid;gap:2px}
+.bucket:hover{border-color:var(--gold)}
+.bucket b{font-size:.92rem}
+.bucket span{font-size:.78rem;color:var(--muted)}
+.bucket:disabled{cursor:default;opacity:.65}
+.bucket.right{border-color:var(--good);box-shadow:inset 0 0 0 1px var(--good);opacity:1}
+.bucket.wrong{border-color:var(--bad);opacity:1}
+.feedback{border-radius:8px;padding:12px 14px;background:var(--surface-2);font-size:.93rem}
+.feedback strong{display:block;margin-bottom:2px}
+.scorebar{display:flex;flex-wrap:wrap;gap:16px;align-items:center}
+.scorebar b{font-family:var(--mono);font-size:1.2rem;font-variant-numeric:tabular-nums}
+.ooo{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:20px}
+.opts{display:grid;gap:8px}
+.opts label{display:flex;gap:10px;align-items:flex-start;font-size:.93rem;cursor:pointer}
+.opts input{margin-top:4px;accent-color:var(--navy)}
+.preview{background:var(--surface-2);border-radius:8px;padding:14px 16px;font-size:.93rem;white-space:pre-wrap}
+
+/* Round 4 */
+.policy{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px}
+.field{display:grid;gap:6px}
+.field>label,.field>.lab{font-weight:600;font-size:.92rem}
+.balance{display:grid;gap:12px}
+.policy-doc{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:20px;display:grid;gap:10px}
+.policy-doc h3{border-bottom:2px solid var(--gold-fill);padding-bottom:6px}
+.policy-doc ol{margin:0;padding-left:20px;display:grid;gap:6px;font-size:.93rem}
+.verdict{font-size:.93rem;padding:10px 12px;border-radius:8px;background:var(--surface-2)}
+
+/* Reflect */
+.ref-card{background:var(--hero-bg);color:var(--hero-ink);border-radius:var(--r);padding:24px;display:grid;gap:12px}
+.ref-card .q{font-family:var(--display);font-size:1.35rem;line-height:1.35}
+.ref-card .q u{text-decoration-color:var(--hero-gold);text-underline-offset:5px}
+.ref-card .label{color:var(--hero-gold)}
+
+footer{border-top:1px solid var(--line);padding-block:20px;color:var(--muted);font-size:.85rem}
+
+@media (max-width:860px){
+  .hero .wrap,.sim,.lb,.inbox,.ooo,.policy,.grid2{grid-template-columns:minmax(0,1fr)}
+  .route{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .scen-pick{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .grid3{grid-template-columns:minmax(0,1fr)}
+  .hero .tags{padding-bottom:8px}
+}
+@media (max-width:480px){
+  .route,.buckets{grid-template-columns:minmax(0,1fr)}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+}
+</style>
+</head>
+<body>
+<header class="hero">
+  <div class="wrap">
+    <div>
+      <div class="eyebrow">Destination Learning · AP Business with Personal Finance</div>
+      <h1>The Captain's <em>Inbox</em></h1>
+      <p class="lede">A four-round simulation about the professional courtesy nobody teaches: acknowledging the message. Students feel the cost of silence, write a 60-second reply, triage a ship's inbox, and set a team policy.</p>
+      <div class="tags" aria-label="Lesson facts">
+        <span class="tag">20–50 minutes</span><span class="tag">Pairs or small groups</span><span class="tag">No login · nothing saved</span>
+      </div>
+    </div>
+    <svg viewBox="0 0 420 230" role="img" aria-labelledby="shipTitle">
+      <title id="shipTitle">A cruise ship at sea while an unopened email floats overboard in a bottle</title>
+      <circle cx="350" cy="52" r="22" fill="#E3B649" opacity=".9"/>
+      <g class="bob">
+        <path d="M70 150 L350 150 L322 186 L96 186 Z" fill="#F3EBD6"/>
+        <rect x="96" y="176" width="226" height="10" fill="#1F3157"/>
+        <rect x="108" y="118" width="212" height="32" rx="3" fill="#E6EDF7"/>
+        <rect x="132" y="92" width="160" height="26" rx="3" fill="#F3EBD6"/>
+        <rect x="160" y="70" width="104" height="22" rx="3" fill="#E6EDF7"/>
+        <rect x="226" y="44" width="24" height="26" fill="#E3B649"/>
+        <rect x="226" y="44" width="24" height="7" fill="#14213D"/>
+        <g fill="#1F3157">
+          <rect x="118" y="128" width="12" height="9" rx="2"/><rect x="138" y="128" width="12" height="9" rx="2"/><rect x="158" y="128" width="12" height="9" rx="2"/><rect x="178" y="128" width="12" height="9" rx="2"/><rect x="198" y="128" width="12" height="9" rx="2"/><rect x="218" y="128" width="12" height="9" rx="2"/><rect x="238" y="128" width="12" height="9" rx="2"/><rect x="258" y="128" width="12" height="9" rx="2"/><rect x="278" y="128" width="12" height="9" rx="2"/><rect x="298" y="128" width="12" height="9" rx="2"/>
+          <rect x="144" y="100" width="14" height="9" rx="2"/><rect x="168" y="100" width="14" height="9" rx="2"/><rect x="192" y="100" width="14" height="9" rx="2"/><rect x="216" y="100" width="14" height="9" rx="2"/><rect x="240" y="100" width="14" height="9" rx="2"/><rect x="264" y="100" width="14" height="9" rx="2"/>
+          <rect x="172" y="76" width="30" height="9" rx="2"/><rect x="210" y="76" width="30" height="9" rx="2"/>
+        </g>
+        <text x="300" y="168" font-family="IBM Plex Mono, monospace" font-size="9" fill="#14213D" text-anchor="end">DESTINATION LEARNING</text>
+      </g>
+      <path class="wave" d="M-40 190 Q -10 180 20 190 T 80 190 T 140 190 T 200 190 T 260 190 T 320 190 T 380 190 T 440 190 T 500 190 V 230 H -40 Z" fill="#1C6583"/>
+      <g class="bottle">
+        <g transform="translate(372 192)">
+          <rect x="-16" y="-7" width="30" height="14" rx="6" fill="#9FD3C7" opacity=".85"/>
+          <rect x="14" y="-3.5" width="7" height="7" rx="1" fill="#8A5E0B"/>
+          <rect x="-10" y="-4.5" width="18" height="9" fill="#F3EBD6"/>
+          <path d="M-10 -4.5 L-1 1 L8 -4.5" fill="none" stroke="#14213D" stroke-width="1"/>
+        </g>
+      </g>
+      <path class="wave2" d="M-40 205 Q -10 197 20 205 T 80 205 T 140 205 T 200 205 T 260 205 T 320 205 T 380 205 T 440 205 T 500 205 V 230 H -40 Z" fill="#14213D"/>
+    </svg>
+  </div>
+</header>
+
+<nav class="tabbar" aria-label="Simulation rounds">
+  <div class="wrap">
+    <div class="tabs" role="tablist" id="tabs"></div>
+  </div>
+</nav>
+
+<main class="wrap" id="main">
+
+<!-- OVERVIEW -->
+<section class="panel" id="p-overview" role="tabpanel" aria-labelledby="t-overview">
+  <div class="panel-head">
+    <span class="label">Set sail</span>
+    <h2>Five stops, one lesson: acknowledge the message.</h2>
+    <p>Pick any single round for a 10-minute activity, or run all five in a 50-minute class. Project the page and click through, or send students the link to work in pairs.</p>
+  </div>
+  <div class="route" id="route"></div>
+
+  <div class="warmup">
+    <div class="label" style="margin-bottom:4px">Warm Up · 3 minutes</div>
+    <p><strong>You email a company with a question about a $4,500 purchase. How long will you wait for any reply before you try a competitor?</strong> Have students hold up fingers: 1 = one hour, 2 = one day, 3 = two days, 4 = a week. Record the class median on the board and return to it in Round 4.</p>
+  </div>
+
+  <details class="guide" open>
+    <summary>Teacher guide and CED connections</summary>
+    <div class="guide-body">
+      <div class="grid2">
+        <div>
+          <h3>By the end of this lesson, you will learn:</h3>
+          <ul>
+            <li>How silence affects customer trust, sales, and daily operations</li>
+            <li>The three parts of a professional acknowledgment: confirm receipt, show courtesy, set a next step</li>
+            <li>How to prioritize an inbox and set expectations when you are unavailable</li>
+            <li>How a response-time standard works as a key performance indicator (KPI) that balances customers and employee well-being</li>
+          </ul>
+        </div>
+        <div>
+          <h3>Pacing</h3>
+          <ul>
+            <li><strong>Quick run (20 min):</strong> Warm Up, Round 1 (one scenario as a class), Round 2</li>
+            <li><strong>Full lesson (50 min):</strong> Warm Up 3 · Round 1 10 · Round 2 8 · Round 3 12 · Round 4 12 · Reflect 5</li>
+            <li><strong>Prep:</strong> none. Every round has built-in feedback. Copy buttons let students paste work into your LMS.</li>
+          </ul>
+        </div>
+      </div>
+      <div>
+        <h3 style="margin-bottom:8px">Where this fits in the CED</h3>
+        <div class="tablewrap">
+          <table class="ced">
+            <thead><tr><th scope="col">CED connection</th><th scope="col">Where students practice it</th></tr></thead>
+            <tbody>
+              <tr><td><strong>Professional and Leadership Skills: Communication</strong></td><td>Rounds 2 and 3: writing acknowledgments and an auto-reply that set clear expectations</td></tr>
+              <tr><td><strong>Professional and Leadership Skills: Decision Making</strong></td><td>Round 3: triaging 13 messages by urgency; Round 4: choosing response standards</td></tr>
+              <tr><td><strong>Professional and Leadership Skills: Collaboration</strong></td><td>Peer review of Round 2 replies; group policy design in Round 4</td></tr>
+              <tr><td><strong>Marketing to Customers</strong> and <strong>Consumer Behavior</strong> (Project 2)</td><td>Round 1: how a slow reply moves a buyer to a competitor</td></tr>
+              <tr><td><strong>Organization, Roles, and Responsibilities</strong> (Project 1)</td><td>Round 3: delegating to the right department; Round 1 Scenario C</td></tr>
+              <tr><td><strong>Management and Leadership</strong> and <strong>Evaluating Performance Using KPIs</strong> (Project 4)</td><td>Round 4: a team communication policy with a measurable response-time KPI</td></tr>
+              <tr><td><strong>Supply Chains</strong> (Project 1)</td><td>Round 1 Scenario D: a supplier holding inventory while waiting for an answer</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="note" style="margin-top:8px">Topic titles follow the AP Business with Personal Finance Course at a Glance. Check topic numbers against your own CED copy before posting them to students.</p>
+      </div>
+      <div>
+        <h3 style="margin-bottom:6px">Business Canvas Project tie-in</h3>
+        <p>Ask teams to add one line to the Customer Relationships block of their Business Canvas Project: “We acknowledge every customer inquiry within ___ because ___.”</p>
+      </div>
+    </div>
+  </details>
+</section>
+
+<!-- ROUND 1 -->
+<section class="panel" id="p-lost" role="tabpanel" aria-labelledby="t-lost" hidden>
+  <div class="panel-head">
+    <span class="label"><span class="flagslot" data-f="0"></span>Round 1 · Lost at Sea</span>
+    <h2>Drag the slider. Watch the silence cost something.</h2>
+    <p>Each group takes one scenario. Move the slider one step at a time, read what happens, and name the type of damage: emotional, financial, or operational.</p>
+  </div>
+  <div class="scen-pick" id="scenPick" role="group" aria-label="Choose a scenario"></div>
+  <div class="card sim">
+    <div style="display:grid;gap:14px;min-width:0">
+      <svg class="sea-svg" viewBox="0 0 400 150" role="img" aria-labelledby="seaTitle" id="seaSvg">
+        <title id="seaTitle">The customer's boat drifts away from your dock as the silence grows</title>
+        <rect x="0" y="100" width="400" height="50" fill="var(--sea)" opacity=".35"/>
+        <rect x="0" y="80" width="78" height="20" fill="var(--navy)"/>
+        <rect x="6" y="100" width="8" height="34" fill="var(--navy)"/><rect x="62" y="100" width="8" height="34" fill="var(--navy)"/>
+        <text x="39" y="74" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="var(--ink)">YOUR DOCK</text>
+        <g id="rivalDock" opacity="0">
+          <rect x="330" y="80" width="70" height="20" fill="var(--gold-fill)"/>
+          <rect x="334" y="100" width="8" height="34" fill="var(--gold-fill)"/><rect x="388" y="100" width="8" height="34" fill="var(--gold-fill)"/>
+          <text x="365" y="74" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="var(--ink)">COMPETITOR</text>
+        </g>
+        <g class="boat-g" id="boat" transform="translate(84 0)">
+          <path d="M0 96 L54 96 L46 110 L8 110 Z" fill="var(--ink)"/>
+          <rect x="24" y="66" width="3" height="30" fill="var(--ink)"/>
+          <path d="M27 68 L46 92 L27 92 Z" fill="var(--surface)" stroke="var(--ink)" stroke-width="1.5"/>
+          <g id="boatQ"><circle cx="12" cy="62" r="9" fill="var(--surface)" stroke="var(--ink)" stroke-width="1.5"/><text x="12" y="66" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" font-weight="600" fill="var(--ink)">?</text></g>
+        </g>
+        <path d="M0 104 Q 25 98 50 104 T 100 104 T 150 104 T 200 104 T 250 104 T 300 104 T 350 104 T 400 104" fill="none" stroke="var(--sea)" stroke-width="2"/>
+      </svg>
+      <div>
+        <label for="silence" class="label" id="silenceLabel">Time without a reply</label>
+        <input type="range" id="silence" class="slider" min="0" max="4" step="1" value="0" aria-describedby="eventText">
+        <div class="steps-labels" id="stepLabels" aria-hidden="true"></div>
+      </div>
+      <p class="event" id="eventText" aria-live="polite"></p>
+    </div>
+    <div style="display:grid;gap:16px;align-content:start;min-width:0">
+      <div>
+        <div class="stat"><span class="label">Customer trust</span><b id="trustNum">100%</b></div>
+        <div class="meter" role="meter" aria-label="Customer trust" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100" id="trustMeter"><span id="trustBar" style="width:100%"></span></div>
+        <p class="note" id="trustWord" style="margin-top:4px">Confident</p>
+      </div>
+      <div class="stat"><span class="label" id="stakeLabel">At risk</span><b id="stakeVal" style="font-size:1.05rem"></b></div>
+      <div>
+        <div class="label" style="margin-bottom:6px">Damage so far</div>
+        <div class="consq" id="consq">
+          <span class="chip" data-c="Emotional">Emotional</span><span class="chip" data-c="Financial">Financial</span><span class="chip" data-c="Operational">Operational</span>
+        </div>
+      </div>
+      <div>
+        <div class="label" style="margin-bottom:6px">Discuss</div>
+        <p id="discussQ"></p>
+      </div>
+      <div style="display:grid;gap:8px">
+        <button class="btn ghost" id="fixBtn" aria-expanded="false" aria-controls="fixBox">Show the three-sentence fix</button>
+        <div class="fixbox" id="fixBox" hidden></div>
+      </div>
+    </div>
+  </div>
+  <p class="bigq">How many business relationships are damaged not because someone made a bad decision, but because nobody communicated at all?</p>
+</section>
+
+<!-- ROUND 2 -->
+<section class="panel" id="p-lifeboat" role="tabpanel" aria-labelledby="t-lifeboat" hidden>
+  <div class="panel-head">
+    <span class="label"><span class="flagslot" data-f="1"></span>Round 2 · The 60-Second Lifeboat</span>
+    <h2>You can't answer everything yet. Acknowledge it anyway.</h2>
+    <p>Pick a message, start the clock, and write a reply that confirms receipt, shows courtesy, and sets a realistic next step. The checklist updates as you type. No 12-page report required.</p>
+  </div>
+  <div class="card lb">
+    <div style="display:grid;gap:14px;min-width:0">
+      <div class="field">
+        <label for="lbPick">Message you are replying to</label>
+        <select id="lbPick"></select>
+      </div>
+      <div class="incoming" id="lbIncoming"></div>
+      <div class="field">
+        <label for="lbText">Your acknowledgment</label>
+        <textarea id="lbText" placeholder="Start with a thank-you, confirm you received it, and say when you'll follow up."></textarea>
+      </div>
+      <div class="row">
+        <button class="btn" id="lbCopy">Copy reply for peer review</button>
+        <button class="btn ghost" id="lbExample">Show an example</button>
+        <button class="btn ghost" id="lbClear">Clear</button>
+        <span class="note" id="lbStatus" aria-live="polite"></span>
+      </div>
+    </div>
+    <div style="display:grid;gap:18px;align-content:start;min-width:0">
+      <div class="timer">
+        <svg viewBox="0 0 64 64" aria-hidden="true">
+          <circle cx="32" cy="32" r="27" fill="none" stroke="var(--line)" stroke-width="6"/>
+          <circle id="timerRing" cx="32" cy="32" r="27" fill="none" stroke="var(--gold-fill)" stroke-width="6" stroke-dasharray="169.6" stroke-dashoffset="0" transform="rotate(-90 32 32)" stroke-linecap="round"/>
+        </svg>
+        <div style="display:grid;gap:6px">
+          <b id="timerNum" role="timer" aria-live="off">1:00</b>
+          <div class="row"><button class="btn gold" id="timerBtn">Start 60 seconds</button></div>
+        </div>
+      </div>
+      <p class="note" id="timerMsg" aria-live="polite"></p>
+      <div>
+        <div class="label" style="margin-bottom:8px">Lifeboat checklist</div>
+        <ul class="checks" id="checks"></ul>
+      </div>
+      <div>
+        <div class="stat"><span class="label">Lifeboats launched</span><span class="mono" id="boatScore">0 of 5</span></div>
+        <div class="boats" id="boats" aria-hidden="true"></div>
+        <p class="note" id="boatVerdict" style="margin-top:6px" aria-live="polite"></p>
+      </div>
+      <p class="note"><strong>Peer review:</strong> Swap replies. Would this message make you trust the sender, or wonder whether to abandon ship? Why?</p>
+    </div>
+  </div>
+</section>
+
+<!-- ROUND 3 -->
+<section class="panel" id="p-inbox" role="tabpanel" aria-labelledby="t-inbox" hidden>
+  <div class="panel-head">
+    <span class="label"><span class="flagslot" data-f="2"></span>Round 3 · The Captain's Inbox</span>
+    <h2>Promoted to Guest Services Manager. 13 unread.</h2>
+    <p>Open each email and sort it. You can't answer everything at once, and you can't spend the whole cruise staring at your inbox. Every sort gets feedback; disagree with the captain if you can defend it.</p>
+  </div>
+  <div class="card scorebar">
+    <div><span class="label">Sorted</span><br><b id="sortedNum">0 / 13</b></div>
+    <div><span class="label">Matches the captain</span><br><b id="rightNum">0</b></div>
+    <div><span class="label">Unanswered urgent</span><br><b id="urgentNum">3</b></div>
+    <button class="btn ghost" id="inboxReset" style="margin-left:auto">Reset inbox</button>
+  </div>
+  <div class="inbox">
+    <ul class="mail-list" id="mailList" aria-label="Inbox"></ul>
+    <div class="card reader" id="reader" aria-live="polite"></div>
+  </div>
+
+  <div class="card" style="display:grid;gap:16px">
+    <div class="panel-head">
+      <span class="label">The twist</span>
+      <h3>The ship leaves port in 20 minutes. Wi-Fi will be spotty for two days.</h3>
+      <p>Build an automatic reply that manages expectations. Turn pieces on and off and watch the message change.</p>
+    </div>
+    <div class="ooo">
+      <div class="opts" id="oooOpts" role="group" aria-label="Auto-reply pieces"></div>
+      <div style="display:grid;gap:10px;min-width:0">
+        <div class="label">Auto-reply preview</div>
+        <div class="preview" id="oooPreview" aria-live="polite"></div>
+        <p class="verdict" id="oooVerdict"></p>
+        <p class="note">Discuss: Where does an automated reply help customers, and where does it replace real service?</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ROUND 4 -->
+<section class="panel" id="p-captain" role="tabpanel" aria-labelledby="t-captain" hidden>
+  <div class="panel-head">
+    <span class="label"><span class="flagslot" data-f="3"></span>Round 4 · You're the Captain Now</span>
+    <h2>Write a communication policy for a team of 15.</h2>
+    <p>Supervisors ignore messages for days, and guest inquiries slip through. Your policy must fix that and still give employees real time off. Even captains need a sunset.</p>
+  </div>
+  <div class="policy">
+    <div class="card" style="display:grid;gap:16px;align-content:start">
+      <div class="field"><label for="pGuest">Guest inquiries and concerns: acknowledge within</label><select id="pGuest"></select></div>
+      <div class="field"><label for="pCrew">Crew scheduling questions: acknowledge within</label><select id="pCrew"></select></div>
+      <div class="field"><label for="pVendor">Vendor and partner inquiries: acknowledge within</label><select id="pVendor"></select></div>
+      <div class="field"><label for="pUrgent">Urgent matters go through</label><select id="pUrgent"></select></div>
+      <div class="field">
+        <span class="lab">Work-life boundaries</span>
+        <div class="opts">
+          <label><input type="checkbox" id="pOff" checked> Off-duty employees are not expected to reply</label>
+          <label><input type="checkbox" id="pCover" checked> A named person covers each shift's inbox</label>
+          <label><input type="checkbox" id="pAuto"> Auto-replies required when away more than one shift</label>
+        </div>
+      </div>
+      <div class="field">
+        <label for="pKpi">KPI target: share of guest messages acknowledged on time</label>
+        <input type="range" id="pKpi" class="slider" min="70" max="100" step="5" value="90">
+        <span class="mono" id="pKpiVal">90%</span>
+      </div>
+    </div>
+    <div style="display:grid;gap:16px;align-content:start;min-width:0">
+      <div class="card balance">
+        <div>
+          <div class="stat"><span class="label">Customer satisfaction</span><b id="csNum">0</b></div>
+          <div class="meter" role="meter" aria-label="Customer satisfaction" aria-valuemin="0" aria-valuemax="100" id="csMeter"><span id="csBar"></span></div>
+        </div>
+        <div>
+          <div class="stat"><span class="label">Employee well-being</span><b id="ewNum">0</b></div>
+          <div class="meter" role="meter" aria-label="Employee well-being" aria-valuemin="0" aria-valuemax="100" id="ewMeter"><span id="ewBar"></span></div>
+        </div>
+        <p class="verdict" id="balVerdict" aria-live="polite"></p>
+      </div>
+      <div class="policy-doc">
+        <span class="label">Team policy · Guest Services, Deck 5</span>
+        <h3>How We Communicate</h3>
+        <ol id="policyList"></ol>
+        <div class="row"><button class="btn" id="policyCopy">Copy policy</button><span class="note" id="policyStatus" aria-live="polite"></span></div>
+      </div>
+      <p class="note"><strong>Present it:</strong> Explain how your policy improves morale, customer satisfaction, and operational efficiency. How does your KPI target compare with the class's Warm Up answer?</p>
+    </div>
+  </div>
+</section>
+
+<!-- REFLECT -->
+<section class="panel" id="p-reflect" role="tabpanel" aria-labelledby="t-reflect" hidden>
+  <div class="panel-head">
+    <span class="label"><span class="flagslot" data-f="4"></span>Final Reflection</span>
+    <h2>What kind of leader will you be?</h2>
+    <p>Finish the sentence, then pick one habit to practice next week. Review your own recent emails to find it.</p>
+  </div>
+  <div class="grid2">
+    <div class="card" style="display:grid;gap:14px;align-content:start">
+      <div class="field"><label for="rWord">I want people to describe my communication style as…</label><input type="text" id="rWord" value="dependable"></div>
+      <div class="field"><label for="rWhy">because…</label><input type="text" id="rWhy" value="people should never have to wonder whether I saw their message"></div>
+      <div class="field"><label for="rHabit">One habit I will practice next week</label><select id="rHabit"></select></div>
+      <div class="row"><button class="btn" id="refCopy">Copy my reflection</button><span class="note" id="refStatus" aria-live="polite"></span></div>
+      <p class="note">These starter answers are examples. Replace them with your own.</p>
+    </div>
+    <div class="ref-card" aria-live="polite">
+      <span class="label">Captain's log</span>
+      <p class="q" id="refOut"></p>
+      <p id="refHabit" style="color:var(--hero-muted)"></p>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">Destination Learning · Where Professional Development Meets Adventure. Student responses stay on this screen and are not saved or sent anywhere.</div>
+</footer>
+
+<script>
+(function(){
+document.documentElement.lang='en';
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+/* ---------- Signal flags (International Code of Signals A–E) ---------- */
+const flags=[
+ '<svg viewBox="0 0 30 20" aria-hidden="true"><rect width="15" height="20" fill="#fff"/><path d="M15 0H30L22 10L30 20H15Z" fill="#1A4FA0"/></svg>',
+ '<svg viewBox="0 0 30 20" aria-hidden="true"><path d="M0 0H30L22 10L30 20H0Z" fill="#C8242B"/></svg>',
+ '<svg viewBox="0 0 30 20" aria-hidden="true"><rect width="30" height="20" fill="#1A4FA0"/><rect y="4" width="30" height="12" fill="#fff"/><rect y="8" width="30" height="4" fill="#C8242B"/></svg>',
+ '<svg viewBox="0 0 30 20" aria-hidden="true"><rect width="30" height="20" fill="#F2C511"/><rect y="5" width="30" height="10" fill="#1A4FA0"/></svg>',
+ '<svg viewBox="0 0 30 20" aria-hidden="true"><rect width="30" height="10" fill="#1A4FA0"/><rect y="10" width="30" height="10" fill="#C8242B"/></svg>'
+];
+document.querySelectorAll('.flagslot').forEach(el=>{el.innerHTML=flags[+el.dataset.f].replace('<svg','<svg style="width:24px;height:16px;border:1px solid var(--line)"')});
+
+/* ---------- Tabs ---------- */
+const tabsDef=[
+ {id:'overview',name:'Set Sail',n:'',time:''},
+ {id:'lost',name:'Lost at Sea',n:'1',f:0,time:'10 min',blurb:'Four scenarios. Drag time forward and watch trust sink.'},
+ {id:'lifeboat',name:'60-Second Lifeboat',n:'2',f:1,time:'8 min',blurb:'Write a timed acknowledgment with a live checklist.'},
+ {id:'inbox',name:"Captain's Inbox",n:'3',f:2,time:'12 min',blurb:'Triage 13 emails, then build an auto-reply before leaving port.'},
+ {id:'captain',name:"Captain Now",n:'4',f:3,time:'12 min',blurb:'Set a team policy and KPI that balances guests and crew.'},
+ {id:'reflect',name:'Reflect',n:'',f:4,time:'5 min',blurb:'Finish the leader sentence and pick one habit.'}
+];
+const tabsEl=$('#tabs');
+tabsDef.forEach(t=>{
+  const b=document.createElement('button');
+  b.className='tab';b.setAttribute('role','tab');b.id='t-'+t.id;b.setAttribute('aria-controls','p-'+t.id);b.dataset.id=t.id;
+  b.innerHTML=(t.f!==undefined?flags[t.f]:'')+(t.n?'<span class="n">R'+t.n+'</span>':'')+esc(t.name);
+  b.addEventListener('click',()=>show(t.id,true));
+  tabsEl.appendChild(b);
+});
+tabsEl.addEventListener('keydown',e=>{
+  const list=[...tabsEl.querySelectorAll('.tab')];const i=list.indexOf(document.activeElement);
+  if(i<0)return;
+  if(e.key==='ArrowRight'||e.key==='ArrowLeft'){e.preventDefault();const j=(i+(e.key==='ArrowRight'?1:-1)+list.length)%list.length;list[j].focus();show(list[j].dataset.id,true);}
+});
+function show(id,scroll){
+  tabsDef.forEach(t=>{
+    const on=t.id===id;
+    $('#t-'+t.id).setAttribute('aria-selected',on);$('#t-'+t.id).tabIndex=on?0:-1;
+    $('#p-'+t.id).hidden=!on;
+  });
+  try{history.replaceState(null,'','#'+id)}catch(e){}
+  if(scroll){const nav=document.querySelector('.tabbar');const y=nav.getBoundingClientRect().top+window.scrollY;if(window.scrollY>y)window.scrollTo({top:y,behavior:'auto'});}
+}
+const route=$('#route');
+tabsDef.slice(1).forEach(t=>{
+  const b=document.createElement('button');b.className='stop';
+  b.innerHTML='<span class="t">'+(t.n?'Round '+t.n:'Wrap-up')+' · '+t.time+'</span><span class="h">'+esc(t.name)+'</span><span class="note">'+esc(t.blurb)+'</span>';
+  b.addEventListener('click',()=>{show(t.id,true);$('#t-'+t.id).focus()});
+  route.appendChild(b);
+});
+const start=(location.hash||'').slice(1);
+show(tabsDef.some(t=>t.id===start)?start:'overview',false);
+
+/* ---------- Copy helper ---------- */
+function copy(text,statusEl,fallbackEl){
+  const done=()=>{statusEl.textContent='Copied.';setTimeout(()=>statusEl.textContent='',2500)};
+  const fail=()=>{
+    statusEl.textContent='Copy is blocked here. The text is selected; press Ctrl+C (or ⌘C).';
+    if(fallbackEl&&fallbackEl.select){fallbackEl.focus();fallbackEl.select();}
+    else if(fallbackEl){const r=document.createRange();r.selectNodeContents(fallbackEl);const s=getSelection();s.removeAllRanges();s.addRange(r);}
+  };
+  try{navigator.clipboard.writeText(text).then(done,fail)}catch(e){fail()}
+}
+
+/* ---------- Round 1 ---------- */
+const scenarios=[
+ {k:'A',title:'The Missing Reservation Response',stakeLabel:'Revenue at risk',stake:'$4,500 booking',unit:['Mon','Tue','Wed','Thu','Fri'],unitName:'Business days without a reply',
+  steps:[
+   ['Monday, 9:00 AM. The Rivera family emails your travel company three questions about cabins, pricing, and a payment plan for a $4,500 family cruise.',100,[]],
+   ['Tuesday. No reply from you. A competing agency answers by 9 AM: they received the questions and will send a full quote tomorrow.',72,['Emotional']],
+   ['Wednesday. Still nothing. The family asks the competitor for that quote and starts comparing cabins there.',48,['Emotional','Financial']],
+   ['Thursday. They book with the competitor. Your company loses the $4,500 sale and any future referrals from this family.',15,['Financial']],
+   ['Friday. Your full answer finally arrives. The family replies that they already booked, and they tell two friends about the slow service.',5,['Financial','Emotional']]],
+  q:'How did one competitor message, sent before it had a full quote, change the Riveras\' purchasing decision?',
+  fix:'Thank you for reaching out about your family cruise! I received your questions about cabins and payment plans and am pulling current pricing now. You will have a complete quote from me by Tuesday at noon.'},
+ {k:'B',title:'The Professional Development Inquiry',stakeLabel:'At risk',stake:'Registration + district funding',unit:['Day 0','Day 1','Day 2','Day 3','Day 4'],unitName:'Days without a reply',
+  steps:[
+   ['Day 0. Ms. Okafor emails the organizer of a professional development experience at sea. She asks about registration, learning objectives, and documentation of participation for her district.',100,[]],
+   ['Day 1. No reply. She wonders whether anyone monitors the inbox.',84,['Emotional']],
+   ['Day 2. Her principal needs documentation by Friday to approve funding. She has nothing to show.',58,['Operational']],
+   ['Day 3. Still silence. She assumes the event is disorganized and starts looking at other workshops.',32,['Emotional']],
+   ['Day 4. The funding deadline passes. She registers for a different program. The organizer never learns why.',8,['Financial']]],
+  q:'What assumptions did Ms. Okafor make about the organization? Were they fair? Does that matter to the business?',
+  fix:'Thank you for your interest in our professional development experience! I received your questions and am gathering the learning objectives and participation documentation your district needs. I will send everything by Wednesday afternoon.'},
+ {k:'C',title:"The Crew Member's Concern",stakeLabel:'At risk',stake:'Tonight\'s shift coverage',unit:['1 PM','2 PM','4 PM','6 PM','7 PM'],unitName:'Hours without a reply',
+  steps:[
+   ['1:00 PM. Deckhand Luis emails his supervisor. He is scheduled for two overlapping shifts tonight. Which one should he work?',100,[]],
+   ['2:00 PM. No reply. Luis asks a coworker, who guesses.',80,['Emotional']],
+   ['4:00 PM. Two crew members now believe they are covering the pool deck. Nobody is assigned to the gangway.',52,['Operational']],
+   ['6:00 PM. The shift starts. The gangway check-in line backs up and guests wait 25 minutes to reboard.',24,['Operational','Emotional']],
+   ['7:00 PM. Guests file complaints. Luis feels his concern was ignored and loses trust in his supervisor.',10,['Emotional','Operational']]],
+  q:'Who in the organization is responsible for the gangway delay? What role did the missing reply play?',
+  fix:'Thanks for flagging this, Luis. I received your message and am checking tonight\'s roster now. I will confirm your assignment by 3 PM, well before your shift.'},
+ {k:'D',title:"The Entrepreneur's Opportunity",stakeLabel:'At risk',stake:'$1,200 order + $400 inventory',unit:['Day 0','Day 1','Day 2','Day 3','Day 4'],unitName:'Days without a reply',
+  steps:[
+   ['Day 0. Island Keepsakes, a small business, proposes 60 custom welcome gifts for a cruise group at $1,200.',100,[]],
+   ['Day 1. No acknowledgment. The owner cannot tell whether the proposal was even opened.',80,['Emotional']],
+   ['Day 2. She is holding $400 of materials for this order and turns away a walk-in customer.',55,['Financial']],
+   ['Day 3. Another customer offers a firm order for the same materials. She has to decide today.',30,['Financial','Operational']],
+   ['Day 4. She sells the materials elsewhere. When the cruise group finally says yes, there are no gifts to deliver.',10,['Financial','Operational']]],
+  q:'What financial risks did the silence create for both the supplier and the cruise group?',
+  fix:'Thank you for the welcome-gift proposal! I received it and am reviewing quantities with our group coordinator. I will give you a firm yes or no by Thursday at 10 AM so you can plan your inventory.'}
+];
+let cur=0;
+const pick=$('#scenPick');
+scenarios.forEach((s,i)=>{
+  const b=document.createElement('button');b.className='scen';b.setAttribute('aria-pressed',i===0);
+  b.innerHTML='<span class="k">Scenario '+s.k+'</span><strong>'+esc(s.title)+'</strong>';
+  b.addEventListener('click',()=>{cur=i;pick.querySelectorAll('.scen').forEach((x,j)=>x.setAttribute('aria-pressed',j===i));$('#silence').value=0;$('#fixBox').hidden=true;$('#fixBtn').setAttribute('aria-expanded','false');$('#fixBtn').textContent='Show the three-sentence fix';renderScen();});
+  pick.appendChild(b);
+});
+function trustWord(t){return t>=85?'Confident':t>=60?'Uneasy':t>=35?'Doubtful':t>=15?'Looking elsewhere':'Gone'}
+function trustColor(t){return t>=60?'var(--good)':t>=35?'var(--warn)':'var(--bad)'}
+function renderScen(){
+  const s=scenarios[cur];const step=+$('#silence').value;const [txt,trust]=s.steps[step];
+  $('#silenceLabel').textContent=s.unitName;
+  $('#silence').setAttribute('aria-valuetext',s.unit[step]);
+  $('#stepLabels').innerHTML=s.unit.map(u=>'<span>'+esc(u)+'</span>').join('');
+  $('#eventText').textContent=txt;
+  $('#trustNum').textContent=trust+'%';$('#trustBar').style.width=trust+'%';$('#trustBar').style.background=trustColor(trust);
+  $('#trustMeter').setAttribute('aria-valuenow',trust);$('#trustWord').textContent=trustWord(trust);
+  $('#stakeLabel').textContent=s.stakeLabel;$('#stakeVal').textContent=s.stake;
+  const seen=new Set();for(let i=0;i<=step;i++)s.steps[i][2].forEach(c=>seen.add(c));
+  document.querySelectorAll('#consq .chip').forEach(c=>{const on=seen.has(c.dataset.c);c.classList.toggle('on',on);c.textContent=(on?'✓ ':'')+c.dataset.c});
+  $('#discussQ').textContent=s.q;$('#fixBox').textContent=s.fix;
+  const x=84+step*55;const y=step*4;
+  $('#boat').setAttribute('transform','translate('+x+' '+y+') rotate('+(step*3)+' 27 100)');
+  $('#rivalDock').setAttribute('opacity',(cur===0||cur===1)&&step>=1?1:0);
+}
+$('#silence').addEventListener('input',renderScen);
+$('#fixBtn').addEventListener('click',()=>{const b=$('#fixBox');b.hidden=!b.hidden;$('#fixBtn').setAttribute('aria-expanded',!b.hidden);$('#fixBtn').textContent=b.hidden?'Show the three-sentence fix':'Hide the fix';});
+renderScen();
+
+/* ---------- Round 2 ---------- */
+const lbMsgs=[
+ {from:'Elena Rivera · Customer',subj:'Questions about a family cruise',body:'Hi, we are a family of four looking at a 7-night Caribbean cruise in June. Do you have connecting cabins? What is the total price with taxes, and do you offer a payment plan?',ex:'Thank you for reaching out about your June family cruise! I received your questions about connecting cabins and payment plans and am checking availability now. I will send you a complete quote by tomorrow at noon.'},
+ {from:'Adaeze Okafor · Teacher',subj:'PD at sea: registration questions',body:'Hello, I am interested in your professional development experience at sea. Before I request school funding, can you tell me the learning objectives and whether I will receive documentation of participation?',ex:'Thank you for your interest in our professional development experience! I received your questions and am gathering the learning objectives and participation documentation. I expect to follow up by Thursday afternoon.'},
+ {from:'Luis Moreno · Deckhand',subj:'Two shifts tonight?',body:'Hi, I see I am on the schedule for both the pool deck and the gangway tonight at 6. Which one should I work?',ex:'Thanks for catching this, Luis. I received your message and am checking tonight\'s roster now. I will confirm your assignment by 3 PM today.'},
+ {from:'Island Keepsakes · Supplier',subj:'Welcome gift proposal',body:'Attached is our proposal for 60 custom welcome gifts for your cruise group. I am holding materials for you, so please let me know if you would like to proceed.',ex:'Thank you for sending the welcome gift proposal! I received it and am reviewing quantities with our group coordinator. I will give you a firm answer by Wednesday at 10 AM so you can plan your inventory.'}
+];
+const lbPick=$('#lbPick');
+lbMsgs.forEach((m,i)=>{const o=document.createElement('option');o.value=i;o.textContent=m.from+': '+m.subj;lbPick.appendChild(o)});
+function renderIncoming(){const m=lbMsgs[+lbPick.value];$('#lbIncoming').innerHTML='<div class="from">From: '+esc(m.from)+'<br>Subject: '+esc(m.subj)+'</div><p style="margin-top:6px">'+esc(m.body)+'</p>'}
+lbPick.addEventListener('change',renderIncoming);renderIncoming();
+const checkDefs=[
+ {id:'receipt',label:'Confirms receipt',hint:'Say you received it or thank them for the message.',test:t=>/\b(received|receiving|got your|have your|confirm(ing)? receipt)\b|thank(s| you) for (your|reaching|contacting|the|sending|writing|flagging|catching|letting)/i.test(t)},
+ {id:'courtesy',label:'Shows courtesy',hint:'A thank-you, please, or appreciation.',test:t=>/\b(thank|thanks|appreciate|please|glad|happy to|grateful)\b/i.test(t)},
+ {id:'next',label:'Sets a realistic next step with a time',hint:'Name when you will follow up: "by Thursday afternoon."',test:t=>/\b(tomorrow|today|tonight|this (morning|afternoon|evening|week)|monday|tuesday|wednesday|thursday|friday|saturday|sunday|end of (the )?day|business days?|within \d+|\d{1,2}(:\d{2})?\s?(am|pm|a\.m\.|p\.m\.)|noon)\b/i.test(t)},
+ {id:'prof',label:'Sounds professional',hint:'No slang like "bro," "lol," or "k."',test:t=>t.trim().length>0&&!/\b(bro|dude|lol|lmao|k|kk|ya|yea|gonna|wanna|u|ur|idk|thx|omg|tbh)\b/i.test(t)&&!/[A-Z]{6,}/.test(t)},
+ {id:'brief',label:'Stays brief (15 to 75 words)',hint:'Three sentences is plenty.',test:t=>{const w=(t.trim().match(/\S+/g)||[]).length;return w>=15&&w<=75}}
+];
+const checksEl=$('#checks');
+checkDefs.forEach(c=>{const li=document.createElement('li');li.id='c-'+c.id;li.innerHTML='<span class="ico" aria-hidden="true">–</span><span><strong>'+esc(c.label)+'</strong><br><span class="note">'+esc(c.hint)+'</span></span><span class="sr" data-sr>not yet</span>';checksEl.appendChild(li)});
+const boatSvg=on=>'<svg viewBox="0 0 34 34"><path d="M4 21 H30 L26 28 H8 Z" fill="'+(on?'var(--gold-fill)':'none')+'" stroke="'+(on?'var(--gold)':'var(--line)')+'" stroke-width="2"/><path d="M17 6 V21 M17 7 L26 19 H17" fill="'+(on?'var(--surface)':'none')+'" stroke="'+(on?'var(--ink)':'var(--line)')+'" stroke-width="2"/></svg>';
+function grade(){
+  const t=$('#lbText').value;let n=0;
+  checkDefs.forEach(c=>{const ok=c.test(t);const li=$('#c-'+c.id);li.classList.toggle('ok',ok);li.classList.toggle('no',!ok&&t.trim().length>0);li.querySelector('.ico').textContent=ok?'✓':(t.trim()?'✕':'–');li.querySelector('[data-sr]').textContent=ok?'met':'not yet';if(ok)n++;});
+  $('#boats').innerHTML=checkDefs.map((_,i)=>boatSvg(i<n)).join('');
+  $('#boatScore').textContent=n+' of 5';
+  $('#boatVerdict').textContent=!t.trim()?'Start typing to launch lifeboats.':n===5?'Every lifeboat launched. This sender would feel heard.':n>=3?'Seaworthy, but check the missing items above.':'The sender may still be wondering whether to abandon ship.';
+}
+$('#lbText').addEventListener('input',grade);grade();
+$('#lbCopy').addEventListener('click',()=>{const m=lbMsgs[+lbPick.value];copy('Replying to: '+m.from+' ('+m.subj+')\n\n'+$('#lbText').value,$('#lbStatus'),$('#lbText'))});
+$('#lbExample').addEventListener('click',()=>{$('#lbText').value=lbMsgs[+lbPick.value].ex;grade();$('#lbStatus').textContent='Example loaded. Try to beat it in your own words.'});
+$('#lbClear').addEventListener('click',()=>{$('#lbText').value='';grade();$('#lbText').focus()});
+let timer=null,left=60;const ring=$('#timerRing'),C=169.6;
+function drawTimer(){$('#timerNum').textContent=left===60?'1:00':'0:'+String(left).padStart(2,'0');ring.setAttribute('stroke-dashoffset',C*(1-left/60));ring.setAttribute('stroke',left<=10?'var(--bad)':'var(--gold-fill)')}
+$('#timerBtn').addEventListener('click',()=>{
+  if(timer){clearInterval(timer);timer=null;$('#timerBtn').textContent='Restart 60 seconds';$('#timerMsg').textContent='Timer stopped.';return}
+  left=60;drawTimer();$('#timerMsg').textContent='Clock is running. Write your acknowledgment.';$('#timerBtn').textContent='Stop timer';$('#lbText').focus();
+  timer=setInterval(()=>{left--;drawTimer();if(left===10)$('#timerMsg').textContent='Ten seconds left.';if(left<=0){clearInterval(timer);timer=null;$('#timerBtn').textContent='Restart 60 seconds';$('#timerMsg').textContent='Time! Count your lifeboats, then swap with a partner.';}},1000);
+});
+drawTimer();
+
+/* ---------- Round 3 ---------- */
+const B={now:['Respond now','Urgent or time-critical'],ack:['Acknowledge + follow up','Needs research; set a time'],del:['Delegate','Another team owns it; tell the sender'],none:['No reply needed','FYI, newsletter, or automated']};
+const mails=[
+ {from:'Guest, Cabin 8142',subj:'Air conditioning not working',time:'10:02',body:'Our cabin is 88 degrees and the air conditioning will not turn on. We have a toddler who cannot nap. Can someone help right away?',a:'now',why:'Guest comfort and safety, happening right now. Call or send maintenance, then confirm with the guest.'},
+ {from:"Captain's Office",subj:'Reminder: muster drill at 4:30 PM',time:'09:58',body:'All departments: guest muster drill begins at 4:30 PM. No action required beyond normal drill procedures.',a:'none',why:'An announcement to everyone. Read it and put the drill on your schedule; no reply is expected.'},
+ {from:'Island Keepsakes',subj:'Welcome gift proposal: decision by Friday',time:'09:51',body:'Attached is our proposal for 60 custom welcome gifts. We need a decision by Friday to hold materials.',a:'ack',why:'Not urgent today, but the supplier is holding inventory. Acknowledge now and give a firm decision date.'},
+ {from:'Guest, Cabin 6120',subj:'Is the snorkel excursion accessible?',time:'09:47',body:'My father uses a wheelchair. Can he join Thursday\'s snorkel excursion, or is there an alternative?',a:'ack',why:'You need to check with the excursion provider. Acknowledge today and promise an answer before Thursday. Delegating to the shore excursions desk is also defensible if you tell the guest.'},
+ {from:'Cruise Industry Weekly',subj:'This week: 10 trends in guest experience',time:'09:30',body:'Your weekly newsletter is here. Read the top stories in cruise hospitality.',a:'none',why:'A newsletter. Save it for later or skip it.'},
+ {from:'Luis Moreno, Deckhand',subj:'Two shifts at 6 PM tonight?',time:'09:22',body:'I am on the schedule for the pool deck and the gangway at the same time tonight. Which one do I work?',a:'now',why:'A staffing gap at boarding is an operations problem. Resolve it before the shift, or at least acknowledge with a time.'},
+ {from:'Coastline Travel Advisors',subj:'Documentation letter for 30 teachers',time:'09:15',body:'Our group of 30 teachers needs a letter documenting participation hours for their districts. Can you provide one?',a:'ack',why:'Important and reasonable, but it takes time to prepare. Confirm receipt and give a delivery date.'},
+ {from:'Guest, Cabin 9033',subj:'Left my passport at the terminal!',time:'09:10',body:'I think I left my bag with my passport at the terminal security desk. The ship departs at 5 PM. What do I do?',a:'now',why:'Time-critical before departure. Contact port security immediately and update the guest.'},
+ {from:'IT Systems',subj:'Your password expires in 14 days',time:'08:55',body:'This is an automated message. Please update your password within 14 days.',a:'none',why:'Automated. Add it to your to-do list; nobody is waiting for a reply.'},
+ {from:'Guest, Cabin 7215',subj:'Birthday surprise for my wife',time:'08:40',body:'Tomorrow is my wife\'s 40th birthday. Could dinner service arrange a cake and a song?',a:'del',why:'Dining services owns this. Forward it with the details, and tell the guest the dining team will confirm.'},
+ {from:'Guest, Cabin 5506',subj:'Change my spa appointment',time:'08:32',body:'Can I move my massage from Wednesday at 2 PM to Thursday morning?',a:'del',why:'The spa manages its own bookings. Forward it and let the guest know who will confirm.'},
+ {from:'Guest, Cabin 8810',subj:'Charged twice for Wi-Fi',time:'08:20',body:'My onboard account shows two charges for the Wi-Fi package. Can this be corrected?',a:'del',why:'Guest accounts (the purser\'s office) handles billing. Delegate and tell the guest who is fixing it.'},
+ {from:'Shoreside Office',subj:'Weekly guest satisfaction report due Thursday',time:'08:05',body:'Please send this week\'s guest satisfaction summary by Thursday, 5 PM.',a:'ack',why:'A real deadline, but not today. Confirm you will deliver by Thursday and block time to do it.'}
+];
+let picks={},sel=0;
+const list=$('#mailList');
+function renderList(){
+  list.innerHTML='';
+  mails.forEach((m,i)=>{
+    const li=document.createElement('li');const p=picks[i];
+    const res=p?(p===m.a?'<span class="res r">✓ '+esc(B[p][0])+'</span>':'<span class="res w">✕ '+esc(B[p][0])+'</span>'):'<span class="res"></span>';
+    li.innerHTML='<button class="mail'+(p?' done':'')+'" aria-current="'+(i===sel)+'"><span class="dot" aria-hidden="true"></span><span style="min-width:0"><span class="s" style="display:block">'+esc(m.subj)+'</span><span class="f" style="display:block">'+esc(m.from)+' · '+m.time+(p?'':' · unread')+'</span></span>'+res+'</button>';
+    li.firstChild.addEventListener('click',()=>{sel=i;renderList();renderReader();if(window.innerWidth<860)$('#reader').scrollIntoView({block:'start'})});
+    list.appendChild(li);
+  });
+  const sorted=Object.keys(picks).length;
+  $('#sortedNum').textContent=sorted+' / '+mails.length;
+  $('#rightNum').textContent=Object.entries(picks).filter(([i,p])=>mails[i].a===p).length;
+  $('#urgentNum').textContent=mails.filter((m,i)=>m.a==='now'&&picks[i]!=='now').length;
+}
+function renderReader(){
+  const m=mails[sel],p=picks[sel];
+  let h='<div class="meta">From: '+esc(m.from)+' · '+m.time+'</div><h3>'+esc(m.subj)+'</h3><p>'+esc(m.body)+'</p><div class="label">Sort this email</div><div class="buckets">';
+  Object.entries(B).forEach(([k,[n,d]])=>{
+    let cls='';if(p){if(k===m.a)cls=' right';else if(k===p)cls=' wrong';}
+    h+='<button class="bucket'+cls+'" data-k="'+k+'"'+(p?' disabled':'')+'><b>'+(p&&k===m.a?'✓ ':p&&k===p?'✕ ':'')+esc(n)+'</b><span>'+esc(d)+'</span></button>';
+  });
+  h+='</div>';
+  if(p){h+='<div class="feedback"><strong>'+(p===m.a?'Matches the captain.':'The captain chose: '+esc(B[m.a][0])+'.')+'</strong>'+esc(m.why)+'</div>';
+    const next=mails.findIndex((_,i)=>!picks[i]);
+    h+=next>=0?'<div><button class="btn" id="nextMail">Next unread email</button></div>':'<div class="feedback"><strong>Inbox sorted.</strong>Now scroll down: the ship is about to leave port.</div>';}
+  $('#reader').innerHTML=h;
+  $('#reader').querySelectorAll('.bucket').forEach(b=>b.addEventListener('click',()=>{picks[sel]=b.dataset.k;renderList();renderReader();}));
+  const nx=$('#nextMail');if(nx)nx.addEventListener('click',()=>{sel=mails.findIndex((_,i)=>!picks[i]);renderList();renderReader();});
+}
+$('#inboxReset').addEventListener('click',()=>{picks={};sel=0;renderList();renderReader()});
+renderList();renderReader();
+
+const oooParts=[
+ {id:'thanks',on:true,label:'Thank the sender',text:'Thank you for your message.',w:1},
+ {id:'away',on:true,label:'Explain the limited connection',text:'I am currently at sea with limited internet access until Wednesday, October 28.',w:2},
+ {id:'when',on:true,label:'Say when they will hear back',text:'I will reply to every message by Thursday, October 29, at 5 PM.',w:3},
+ {id:'urgent',on:false,label:'Give an urgent contact',text:'For urgent guest matters, please contact the Guest Services Desk, Deck 5, at extension 5000.',w:3},
+ {id:'what',on:false,label:'Define "urgent"',text:'Urgent matters include safety concerns, missed departures, and problems in your cabin.',w:1},
+ {id:'sign',on:true,label:'Professional sign-off',text:'Warm regards,\nGuest Services Manager',w:1},
+ {id:'bad',on:false,label:'Add "lol sorry, on vacay, will get to it eventually"',text:'lol sorry, on vacay, will get to it eventually',w:-5}
+];
+const oo=$('#oooOpts');
+oooParts.forEach(p=>{const l=document.createElement('label');l.innerHTML='<input type="checkbox" id="ooo-'+p.id+'"'+(p.on?' checked':'')+'> <span>'+esc(p.label)+'</span>';l.querySelector('input').addEventListener('change',e=>{p.on=e.target.checked;renderOoo()});oo.appendChild(l)});
+function renderOoo(){
+  const on=oooParts.filter(p=>p.on);
+  const body=on.filter(p=>p.id!=='sign').map(p=>p.text).join(' ');
+  const sign=on.find(p=>p.id==='sign');
+  $('#oooPreview').textContent=(on.length?(body+(sign?'\n\n'+sign.text:'')):'(Empty. Turn on at least one piece.)');
+  const score=on.reduce((s,p)=>s+p.w,0);
+  const has=id=>on.some(p=>p.id===id);
+  let v;
+  if(has('bad'))v='Abandon ship. That line undoes everything professional above it.';
+  else if(!has('when'))v='The sender still does not know when they will hear back. Add a reply date.';
+  else if(!has('urgent'))v='Good expectations, but a guest with a missed departure has nowhere to turn. Add an urgent contact.';
+  else if(score>=10)v='Shipshape. The sender knows you got it, when you\'ll answer, and where to go if it can\'t wait.';
+  else v='Seaworthy. Consider which pieces would help an anxious guest most.';
+  $('#oooVerdict').textContent=v;
+}
+renderOoo();
+
+/* ---------- Round 4 ---------- */
+const times=[['1h','Within 1 hour'],['shift','Same shift'],['1d','1 business day'],['2d','2 business days'],['none','No standard']];
+const csPts={'1h':30,'shift':26,'1d':16,'2d':6,'none':0};
+const ewPts={'1h':-18,'shift':-6,'1d':0,'2d':2,'none':2};
+function fill(id,val){const s=$(id);times.forEach(([v,t])=>{const o=document.createElement('option');o.value=v;o.textContent=t;if(v===val)o.selected=true;s.appendChild(o)})}
+fill('#pGuest','shift');fill('#pCrew','shift');fill('#pVendor','1d');
+const urg=[['radio','Radio or phone the duty manager','a radio or phone call to the duty manager'],['text','Text message to the supervisor','a text message to the supervisor'],['email','Email marked URGENT','an email marked URGENT'],['none','No separate urgent channel','']];
+urg.forEach(([v,t,_])=>{const o=document.createElement('option');o.value=v;o.textContent=t;$('#pUrgent').appendChild(o)});
+const habits=['Acknowledge every message within one business day','Always include a follow-up time in my reply','Set an auto-reply when I will be unavailable','Check my inbox at two set times each day','Forward messages I can\'t answer and tell the sender who has them'];
+habits.forEach(h=>{const o=document.createElement('option');o.textContent=h;$('#rHabit').appendChild(o)});
+function clamp(n){return Math.max(0,Math.min(100,Math.round(n)))}
+function renderPolicy(){
+  const g=$('#pGuest').value,c=$('#pCrew').value,v=$('#pVendor').value,u=$('#pUrgent').value;
+  const off=$('#pOff').checked,cover=$('#pCover').checked,auto=$('#pAuto').checked,kpi=+$('#pKpi').value;
+  $('#pKpiVal').textContent=kpi+'%';
+  let cs=20+csPts[g]+csPts[c]*.5+csPts[v]*.5+(u==='radio'?12:u==='text'?8:u==='email'?2:-6)+(cover?10:-8)+(auto?6:0)+(kpi-70)*.4;
+  let ew=72+ewPts[g]+ewPts[c]+ewPts[v]*.5+(off?14:-22)+(cover?8:-6)+(u==='radio'||u==='text'?4:u==='none'?-6:0)-(kpi-85)*.8+(auto?2:0);
+  if(!off&&g==='1h')ew-=10;
+  if(c==='2d'||c==='none')cs-=6;
+  cs=clamp(cs);ew=clamp(ew);
+  [['cs',cs],['ew',ew]].forEach(([k,n])=>{$('#'+k+'Num').textContent=n;$('#'+k+'Bar').style.width=n+'%';$('#'+k+'Bar').style.background=n>=65?'var(--good)':n>=40?'var(--warn)':'var(--bad)';$('#'+k+'Meter').setAttribute('aria-valuenow',n)});
+  let verdict;
+  if(cs>=65&&ew>=65)verdict='Smooth sailing. Guests hear back quickly and the crew still gets real time off.';
+  else if(cs>=65)verdict='Guests are happy, but this pace will burn out your crew. Who covers when someone is off duty?';
+  else if(ew>=65)verdict='The crew is rested, but guests are left adrift. Tighten the guest standard or add an urgent channel.';
+  else verdict='Rough seas for everyone. Start with a clear guest standard and a named inbox owner each shift.';
+  $('#balVerdict').textContent=verdict;
+  const T=x=>times.find(t=>t[0]===x)[1].toLowerCase();
+  const items=[];
+  items.push(g==='none'?'Guest inquiries have no set response time.':'We acknowledge every guest inquiry '+(g==='1h'?'within one hour':g==='shift'?'before the end of the shift it arrives':'within '+T(g).replace('business','business'))+', even if the full answer comes later.');
+  items.push(c==='none'?'Crew scheduling questions have no set response time.':'Supervisors answer crew scheduling questions '+(c==='1h'?'within one hour':c==='shift'?'during the same shift':'within '+T(c))+'.');
+  items.push(v==='none'?'Vendor inquiries have no set response time.':'Vendors and partners receive an acknowledgment '+(v==='1h'?'within one hour':v==='shift'?'during the same shift':'within '+T(v))+' with a decision date.');
+  items.push(u==='none'?'There is no separate urgent channel.':'Urgent matters (safety, missed departures, cabin problems) go through '+urg.find(x=>x[0]===u)[2]+'.');
+  if(cover)items.push('Each shift has a named inbox owner who covers messages for anyone off duty.');
+  items.push(off?'Off-duty employees are not expected to read or reply to work messages.':'Employees may be contacted while off duty.');
+  if(auto)items.push('Anyone away more than one shift sets an auto-reply with a return date and an urgent contact.');
+  items.push('KPI: we acknowledge at least '+kpi+'% of guest messages within our standard, reviewed every week.');
+  $('#policyList').innerHTML=items.map(i=>'<li>'+esc(i)+'</li>').join('');
+}
+['#pGuest','#pCrew','#pVendor','#pUrgent','#pOff','#pCover','#pAuto','#pKpi'].forEach(id=>$(id).addEventListener('input',renderPolicy));
+['#pGuest','#pCrew','#pVendor','#pUrgent','#pOff','#pCover','#pAuto'].forEach(id=>$(id).addEventListener('change',renderPolicy));
+renderPolicy();
+$('#policyCopy').addEventListener('click',()=>{const t='How We Communicate (Guest Services, Deck 5)\n'+[...document.querySelectorAll('#policyList li')].map((l,i)=>(i+1)+'. '+l.textContent).join('\n');copy(t,$('#policyStatus'),$('#policyList'))});
+
+/* ---------- Reflect ---------- */
+function renderRef(){
+  const w=$('#rWord').value.trim()||'__________',y=$('#rWhy').value.trim()||'__________';
+  $('#refOut').innerHTML='“When I become a business professional or leader, I want people to describe my communication style as <u>'+esc(w)+'</u> because <u>'+esc(y)+'</u>.”';
+  $('#refHabit').textContent='Next week I will: '+$('#rHabit').value;
+}
+['#rWord','#rWhy','#rHabit'].forEach(id=>$(id).addEventListener('input',renderRef));
+$('#rHabit').addEventListener('change',renderRef);
+renderRef();
+$('#refCopy').addEventListener('click',()=>{copy($('#refOut').textContent+'\n'+$('#refHabit').textContent,$('#refStatus'),$('#refOut'))});
+})();
+</script>
+
+</body>
+</html>
